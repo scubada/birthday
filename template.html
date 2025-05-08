@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>День рождения</title>
+<style>
+body {
+  font-family: 'Arial', sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  background: #0f0107 url('https://i.imgur.com/8VLN8lL.jpeg') no-repeat center/cover;
+  color: #00;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 320px;
+  margin: 20px auto;
+  padding: 20px;
+  background: rgb(255,255,236);
+  border-radius: 10px;
+  border: 5px solid #f0deec;
+  backdrop-filter: blur(5px);
+  position: relative;
+  overflow: hidden;
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('https://i.imgur.com/FzYDgBR.jpeg') no-repeat center/contain;
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+h1 {
+  text-shadow: 0 0 10px #f0deec;
+  margin-bottom: 20px;
+  font-size: 24px;
+  animation: text-pulse 1.5s infinite alternate;
+  position: relative;
+}
+
+@keyframes text-pulse {
+  from { text-shadow: 0 0 5px #f2e0ee; }
+  to { text-shadow: 0 0 15px #f0deec; }
+}
+
+.puzzle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 300px;
+  height: 300px;
+  margin: 20px auto;
+  gap: 0;
+  position: relative;
+}
+
+.puzzle-piece {
+  width: 100px;
+  height: 100px;
+  border: 2px solid #c6b4ce;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #0f0107;
+  background-color: rrgb(0,51,15);
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+
+
+@keyframes shine {
+  0% { transform: rotate(45deg) translate(-30%, -30%); }
+  100% { transform: rotate(45deg) translate(30%, 30%); }
+}
+
+.puzzle-piece:hover {
+  border-color: #f2e0ee;
+  background-color: #f2e0ee;
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+.puzzle-piece.has-image {
+  border: none;
+  background-size: 300px 300px;
+  animation: piece-glow 0.5s forwards;
+}
+
+@keyframes piece-glow {
+  0% { box-shadow: 0 0 5px #0f0107; }
+  100% { box-shadow: none; }
+}
+
+.status {
+  margin: 10px 0;
+  font-weight: bold;
+  text-shadow: 0 0 5px #f2e0ee;
+  animation: status-pulse 2s infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+.hidden { display: none; }
+
+.complete .puzzle-piece {
+  border: none;
+  box-shadow: none;
+}
+
+
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.sakura {
+  position: absolute;
+  background: url('https://i.imgur.com/7rdryut.jpeg') no-repeat center/contain;
+  width: 30px;
+  height: 30px;
+  pointer-events: none;
+  animation: fall linear infinite;
+}
+
+@keyframes fall {
+  to { transform: translateY(100vh); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Здравствуйте!<br>Это увлекательный квест</h1>
+  <p class="status" id="status">Загружено: 0/9</p>
+  
+  <div class="puzzle-grid" id="puzzle-grid">
+    <div class="puzzle-piece" data-index="0">1</div>
+    <div class="puzzle-piece" data-index="1">2</div>
+    <div class="puzzle-piece" data-index="2">3</div>
+    <div class="puzzle-piece" data-index="3">4</div>
+    <div class="puzzle-piece" data-index="4">5</div>
+    <div class="puzzle-piece" data-index="5">6</div>
+    <div class="puzzle-piece" data-index="6">7</div>
+    <div class="puzzle-piece" data-index="7">8</div>
+    <div class="puzzle-piece" data-index="8">9</div>
+  </div>
+  
+  <input type="file" id="file-input" accept="image/*" class="hidden">
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Создаем сакуру
+  function createSakura() {
+    const sakura = document.createElement('div');
+    sakura.className = 'sakura';
+    sakura.style.left = Math.random() * 100 + 'vw';
+    sakura.style.animationDuration = (Math.random() * 5 + 5) + 's';
+    sakura.style.opacity = Math.random() * 0.5 + 0.3;
+    sakura.style.width = (Math.random() * 30 + 20) + 'px';
+    sakura.style.height = sakura.style.width;
+    document.body.appendChild(sakura);
+    
+    setTimeout(() => {
+      sakura.remove();
+    }, parseFloat(sakura.style.animationDuration) * 1000);
+  }
+  
+  // Запускаем сакуру
+  setInterval(createSakura, 300);
+  
+  const pieces = new Array(9).fill(null);
+  const fileInput = document.getElementById('file-input');
+  const puzzleGrid = document.getElementById('puzzle-grid');
+  let selectedIndex = 0;
+  
+  const statusElement = document.getElementById('status');
+  const puzzlePieces = document.querySelectorAll('.puzzle-piece');
+  
+  // Предустановленные аниме-изображения (можно заменить своими)
+  const animeImages = [
+    'https://i.imgur.com/7rdryut.jpeg',
+    'https://i.imgur.com/7rdryut.jpeg',
+    'https://i.imgur.com/0pkpXC8.jpeg',
+    'https://i.imgur.com/9Bls72n.jpeg',
+    'https://i.imgur.com/dmqk4c1.jpeg',
+    'https://i.imgur.com/lYqVwLR.jpeg',
+    'https://i.imgur.com/YiC57Jf.jpeg',
+    'https://i.imgur.com/nnQBoLc.jpeg',
+    'https://i.imgur.com/wwsAcM7.jpeg'
+  ];
+  
+  function updateStatus() {
+    const loadedCount = pieces.filter(Boolean).length;
+    statusElement.textContent = `Загружено: ${loadedCount}/9`;
+    
+    if (loadedCount === 9) {
+      puzzleGrid.classList.add('complete');
+      // Убираем все тени и границы
+      document.querySelectorAll('.puzzle-piece').forEach(piece => {
+        piece.style.boxShadow = 'none';
+        piece.style.border = 'none';
+      });
+    }
+  }
+  
+  function handlePieceClick(index) {
+    selectedIndex = index;
+    fileInput.value = '';
+    fileInput.click();
+  }
+  
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      pieces[selectedIndex] = e.target.result;
+      const piece = puzzlePieces[selectedIndex];
+      
+      piece.classList.add('has-image');
+      piece.style.backgroundImage = `url(${e.target.result})`;
+      piece.style.backgroundPosition = 
+        `${-100 * (selectedIndex % 3)}px ${-100 * Math.floor(selectedIndex / 3)}px`;
+      piece.textContent = '';
+      
+      updateStatus();
+    };
+    reader.readAsDataURL(file);
+  }
+  
+  puzzlePieces.forEach((piece, index) => {
+    piece.addEventListener('click', () => handlePieceClick(index));
+  });
+  
+  fileInput.addEventListener('change', handleFileSelect);
+ 
+});
+</script>
+</body>
+</html>
